@@ -26,15 +26,20 @@ See options/base_options.py and options/test_options.py for more test options.
 See training and test tips at: https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix/blob/master/docs/tips.md
 See frequently asked questions at: https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix/blob/master/docs/qa.md
 """
+
 import os
+import torch
+import numpy as np
+
 from options.test_options import TestOptions
 from data import create_dataset
 from models import create_model
-from util.visualizer import save_images
-from util import html
+from util import util
+from cv2 import *
 
 
 if __name__ == '__main__':
+
     opt = TestOptions().parse()  # get test options
     # hard-code some parameters for test
     opt.num_threads = 0   # test code only supports num_threads = 1
@@ -45,22 +50,44 @@ if __name__ == '__main__':
     dataset = create_dataset(opt)  # create a dataset given opt.dataset_mode and other options
     model = create_model(opt)      # create a model given opt.model and other options
     model.setup(opt)               # regular setup: load and print networks; create schedulers
-    # create a website
-    web_dir = os.path.join(opt.results_dir, opt.name, '%s_%s' % (opt.phase, opt.epoch))  # define the website directory
-    webpage = html.HTML(web_dir, 'Experiment = %s, Phase = %s, Epoch = %s' % (opt.name, opt.phase, opt.epoch))
     # test with eval mode. This only affects layers like batchnorm and dropout.
     # For [pix2pix]: we use batchnorm and dropout in the original pix2pix. You can experiment it with and without eval() mode.
     # For [CycleGAN]: It should not affect CycleGAN as CycleGAN uses instancenorm without dropout.
     if opt.eval:
         model.eval()
-    for i, data in enumerate(dataset):
-        if i >= opt.num_test:  # only apply our model to opt.num_test images.
-            break
+
+    data = next(iter(dataset), None)
+
+    webcam = VideoCapture(0)
+    namedWindow("cam-input")
+    namedWindow("cam-output")
+
+
+    while True:
+        success, input_image = webcam.read()
+        imshow("cam-input", input_image)
+
+
+        input_image = cv2.resize(input_image, (256, 256))
+        input_image = cv2.cvtColor(input_image, cv2.COLOR_BGR2RGB)
+        input_image = np.asarray([input_image])
+        input_image = np.transpose(input_image, (0, 3, 1, 2))
+
+        data['A'] = torch.FloatTensor(input_image)
+
         model.set_input(data)  # unpack data from data loader
-        model.test()           # run inference
-        visuals = model.get_current_visuals()  # get image results
-        img_path = model.get_image_paths()     # get image paths
-        if i % 5 == 0:  # save images to an HTML file
-            print('processing (%04d)-th image... %s' % (i, img_path))
-        save_images(webpage, visuals, img_path, aspect_ratio=opt.aspect_ratio, width=opt.display_winsize)
-    webpage.save()  # save the HTML
+        model.test()  # run inference
+
+        result_image = model.fake_B.data
+        result_image = util.tensor2im(result_image)
+        result_image = cv2.cvtColor(np.array(result_image), cv2.COLOR_RGB2BGR)
+        result_image = cv2.resize(result_image, (512, 512))
+
+        imshow("cam-output", result_image)
+
+        k = cv2.waitKey(1)
+        if k == 27:
+            break
+
+    destroyWindow("cam-input")
+    destroyWindow("cam-output")
