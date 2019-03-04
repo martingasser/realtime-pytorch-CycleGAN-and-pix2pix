@@ -58,15 +58,18 @@ if __name__ == '__main__':
 
     data = next(iter(dataset), None)
 
-    webcam = VideoCapture(0)
+    webcam = VideoCapture(opt.videosource)
     namedWindow("cam-input")
     namedWindow("cam-output")
 
 
     while True:
         success, input_image = webcam.read()
-        imshow("cam-input", input_image)
+        if not success:
+            print("Could not get an image. Please check your video source")
+            break
 
+        imshow("cam-input", input_image)
 
         input_image = cv2.resize(input_image, (256, 256))
         input_image = cv2.cvtColor(input_image, cv2.COLOR_BGR2RGB)
