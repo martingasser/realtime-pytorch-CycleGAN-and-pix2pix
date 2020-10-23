@@ -21,8 +21,8 @@ class BaseOptions():
         """Define the common options that are used in both training and test."""
         # basic parameters
         parser.add_argument('--dataroot', type=str, default=None, help='path to images (should have subfolders trainA, trainB, valA, valB, etc)')
-        parser.add_argument('--videosource', type=int, default=0, help='set what video source is used')
         parser.add_argument('--name', type=str, default='experiment_name', help='name of the experiment. It decides where to store samples and models')
+        parser.add_argument('--videosource', type=str, default='0', help='set what video source is used')
         parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
         parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
         # model parameters
@@ -106,7 +106,7 @@ class BaseOptions():
         # save to the disk
         expr_dir = os.path.join(opt.checkpoints_dir, opt.name)
         util.mkdirs(expr_dir)
-        file_name = os.path.join(expr_dir, 'opt.txt')
+        file_name = os.path.join(expr_dir, '{}_opt.txt'.format(opt.phase))
         with open(file_name, 'wt') as opt_file:
             opt_file.write(message)
             opt_file.write('\n')
