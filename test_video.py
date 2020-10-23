@@ -33,7 +33,7 @@ from options.test_options import TestOptions
 from data import create_dataset
 from models import create_model
 from util import util
-from cv2 import *
+import cv2
 
 if __name__ == '__main__':
     opt = TestOptions().parse()  # get test options
@@ -43,7 +43,6 @@ if __name__ == '__main__':
     opt.serial_batches = True  # disable data shuffling; comment this line if results on randomly chosen images are needed.
     opt.no_flip = True    # no flip; comment this line if results on flipped images are needed.
     opt.display_id = -1   # no visdom display; the test code saves the results to a HTML file.
-    dataset = create_dataset(opt)  # create a dataset given opt.dataset_mode and other options
     model = create_model(opt)      # create a model given opt.model and other options
     model.setup(opt)               # regular setup: load and print networks; create schedulers
     # test with eval mode. This only affects layers like batchnorm and dropout.
@@ -56,23 +55,23 @@ if __name__ == '__main__':
     # Source: https://github.com/Vinno97/realtime-pytorch-CycleGAN-and-pix2pix/blob/master/test.py
     """
 
-    data = next(iter(dataset), None)
-
     if os.path.isfile(opt.videosource):
         src = os.path.abspath(opt.videosource)
     else:
         src = int(opt.videosource)
 
-    webcam = VideoCapture(src)
-    namedWindow("cam-input")
-    namedWindow("cam-output")
+    webcam = cv2.VideoCapture(src)
+    cv2.namedWindow("cam-input")
+    cv2.namedWindow("cam-output")
+    
+    data = {"A": None, "A_paths": None}
     while True:
         success, input_image = webcam.read()
         if not success:
             print("Could not get an image. Please check your video source")
             break
 
-        imshow("cam-input", input_image)
+        cv2.imshow("cam-input", input_image)
 
         input_image = cv2.resize(input_image, (256, 256))
         input_image = cv2.cvtColor(input_image, cv2.COLOR_BGR2RGB)
@@ -90,11 +89,11 @@ if __name__ == '__main__':
         result_image = cv2.cvtColor(np.array(result_image), cv2.COLOR_RGB2BGR)
         result_image = cv2.resize(result_image, (512, 512))
 
-        imshow("cam-output", result_image)
+        cv2.imshow("cam-output", result_image)
 
         k = cv2.waitKey(1)
         if k == 27 or k == ord('q'):
             break
 
-    destroyWindow("cam-input")
-    destroyWindow("cam-output")
+    cv2.destroyWindow("cam-input")
+    cv2.destroyWindow("cam-output")
