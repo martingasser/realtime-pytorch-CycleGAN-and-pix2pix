@@ -79,12 +79,13 @@ if __name__ == '__main__':
         input_image = np.transpose(input_image, (0, 3, 1, 2))
 
         data['A'] = torch.FloatTensor(input_image)
+        # data['B'] = torch.FloatTensor(input_image)
 
         model.set_input(data)  # unpack data from data loader
         model.test()  # run inference
 
-        result_image = model.get_current_visuals()['fake']
-        #print(result_image)
+        result_image = model.get_current_visuals()['fake_B']
+
         result_image = util.tensor2im(result_image)
         result_image = cv2.cvtColor(np.array(result_image), cv2.COLOR_RGB2BGR)
         result_image = cv2.resize(result_image, (512, 512))

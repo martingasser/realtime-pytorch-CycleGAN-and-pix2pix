@@ -109,9 +109,9 @@ def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[]):
     Return an initialized network.
     """
     if len(gpu_ids) > 0:
-        assert(torch.cuda.is_available())
-        net.to(gpu_ids[0])
-        net = torch.nn.DataParallel(net, gpu_ids)  # multi-GPUs
+        #assert(torch.cuda.is_available())
+        net.to(torch.device('mps'))
+        #net = torch.nn.DataParallel(net, gpu_ids)  # multi-GPUs
     init_weights(net, init_type, init_gain=init_gain)
     return net
 
@@ -367,6 +367,7 @@ class ResnetGenerator(nn.Module):
         model += [nn.Tanh()]
 
         self.model = nn.Sequential(*model)
+        self.model.to(torch.device('mps'))
 
     def forward(self, input):
         """Standard forward"""
@@ -459,6 +460,7 @@ class UnetGenerator(nn.Module):
         unet_block = UnetSkipConnectionBlock(ngf * 2, ngf * 4, input_nc=None, submodule=unet_block, norm_layer=norm_layer)
         unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_block, norm_layer=norm_layer)
         self.model = UnetSkipConnectionBlock(output_nc, ngf, input_nc=input_nc, submodule=unet_block, outermost=True, norm_layer=norm_layer)  # add the outermost layer
+        self.model.to(device=torch.device('mps'))
 
     def forward(self, input):
         """Standard forward"""
@@ -526,7 +528,7 @@ class UnetSkipConnectionBlock(nn.Module):
             else:
                 model = down + [submodule] + up
 
-        self.model = nn.Sequential(*model)
+        self.model = nn.Sequential(*model).to(device=torch.device('mps'))
 
     def forward(self, x):
         if self.outermost:
@@ -576,7 +578,7 @@ class NLayerDiscriminator(nn.Module):
         ]
 
         sequence += [nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw)]  # output 1 channel prediction map
-        self.model = nn.Sequential(*sequence)
+        self.model = nn.Sequential(*sequence).to(torch.device('mps'))
 
     def forward(self, input):
         """Standard forward."""
